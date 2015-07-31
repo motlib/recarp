@@ -1,8 +1,8 @@
 # recarp
 
-======================================================
- Remote Control of Air Conditioning by a Raspberry PI
-======================================================
+====================================================
+Remote Control of Air Conditioning by a Raspberry PI
+====================================================
 
 This project implements a distributed climate sensor (tempaerature,
 humidity, air pressure) and actor (air conditioning and heating
