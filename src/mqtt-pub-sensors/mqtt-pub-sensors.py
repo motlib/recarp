@@ -37,11 +37,13 @@ def setup_sensors():
 
     return sensors
 
+
 def main():    
     '''Application main entry point.
 
-    Set up the sensors and publish cyclic updates of the sensor values to the 
-    MQTT broker.'''
+    Set up the sensors and publish cyclic updates of the sensor values
+    to the MQTT broker.
+    '''
 
     init()
     

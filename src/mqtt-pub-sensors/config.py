@@ -1,4 +1,4 @@
-# $Id: config.py 61 2015-04-05 00:44:07Z andreas $
+'''Configuration file for mqtt-pub-sensor.'''
 
 import logging
 
@@ -19,4 +19,4 @@ config = {
     # Log level
     'log_level': logging.INFO,
 }
-    
+

@@ -18,3 +18,4 @@ class RPiInternalTemp(SensorBase):
         return [
             SensorEvent(self, temp, 'C', 'temperature')
         ]
+    
