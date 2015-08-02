@@ -1,0 +1,3 @@
+# Intermediate and temporary python files to ignore
+*.pyc
+__pycache__
