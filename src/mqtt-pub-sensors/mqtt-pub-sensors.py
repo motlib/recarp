@@ -1,81 +1,107 @@
 # $Id: mqtt-pub-sensors.py 61 2015-04-05 00:44:07Z andreas $
 
-import paho.mqtt.publish as mqtt
-from sensors.BMP180 import BMP180
-from sensors.HTU21D import HTU21D
-from sensors.TSL2561 import TSL2561
-from sensors.RPiInternalTemp import RPiInternalTemp
+
 import logging
-import smbus
 import time
-from config import config
+import json
+import os
 
+import paho.mqtt.client as mqtt
+import paho.mqtt.publish as publish
+from config import config, get_sensors
 
-def init():
+def init_runtime():
     '''Initialize runtime system.'''
 
     # set up logging level and format
     logging.basicConfig(
         format='%(asctime)s - %(levelname)s - %(message)s', 
-        level=config['log_level'],
-        filename=config['log_file'])
+        level=logging.DEBUG)
+        #filename=config['logfile#'])
+
+        
+def mqtt_connect():
+    host = config['mqtt_broker'];
+    msg = "Connecting to mqtt broker '{0}'."
+    logging.info(msg.format(host))
+
+    mqtt_clt = mqtt.Client()
+    #mqtt_clt.connect(host=host)
+    #mqtt_clt.loop_start()
+    logging.info('Connection established.')
+
+    return mqtt_clt
+    
+
+def get_mqtt_path(evt):
+
+    data = {
+        'prefix': config['mqtt_topic_prefix'],
+        'node': config['node_name'],
+        'sensor': evt.getSensor().getName(),
+        'quantity': evt.getQuantity(),
+    }
+
+    path_tmpl = '{prefix}/{node}/{sensor}/{quantity}'
+    
+    return path_tmpl.format(**data)
 
 
-def setup_sensors():
-    '''Set up the sensors.'''
+def get_mqtt_message(evt):
+    
+    value = {
+        'time': evt.getTimestamp().isoformat(),
+        'sensor_name': evt.getSensor().getName(),
+        'quantity': evt.getQuantity(),
+        'unit': evt.getUnit(),
+        'value': evt.getValue(),
+    }
+    
+    return json.dumps(value, sort_keys=True, indent=4)
 
-    logging.info('Setting up sensors')
-
-    bus = smbus.SMBus(1)
-
-    sensors = [
-        BMP180('BMP180', bus), 
-        HTU21D('HTU21D', 1), # other interface, needs bus number, not smbus object
-        TSL2561('TSL2561', bus),
-        RPiInternalTemp('RPi3')
-    ]
-
-    return sensors
-
-
+    
 def main():    
     '''Application main entry point.
 
-    Set up the sensors and publish cyclic updates of the sensor values
-    to the MQTT broker.
-    '''
+    Set up the sensors and publish cyclic updates of the sensor values to the 
+    MQTT broker.'''
 
-    init()
+    init_runtime()
     
-    sensors = setup_sensors()
-    
-    logging.info('Start sending events to MQTT broker.')
+    logging.info('Setting up sensors')
+    sensors = get_sensors()
+
+    mqtt_clt = mqtt_connect()
     
     while True:
         sens_evts = []
-        
+
         for s in sensors:
-            sens_evts.extend(s.sampleValues())
+            logging.debug('Reading sensor ' + s.getName())
+            sens_evts.extend(
+                s.sampleValues())
+            logging.debug('Got result.')
 
+        logging.debug('Publishing data.')
         for evt in sens_evts:
-            mqtt_path = '{p}/{n}/{q}'.format(
-                p=config['mqtt_topic_prefix'],
-                n=evt.getSensor().getName(),
-                q=evt.getQuantity()) 
-
-            mqtt_val = str(evt.getValue())
+            mqtt_path = get_mqtt_path(evt)
+            mqtt_msg = get_mqtt_message(evt)
 
             # The publish might fail, e.g. due to network problems. Just log 
             # the exception and try again next time.
             try:
-                mqtt.single(
-                    mqtt_path, 
-                    mqtt_val, 
+                publish.single(
+                    topic=mqtt_path,
+                    payload=mqtt_msg,
                     hostname=config['mqtt_broker'])
+#                mqtt_clt.publish(
+#                    mqtt_path, 
+#                    mqtt_msg)
             except:
-                logging.exception('Publish of single MQTT value failed.')
+                logging.exception('Publish of MQTT value failed.')
                    
-        time.sleep(config['sample_interval'])
+        #time.sleep(config['sample_interval'])
+        time.sleep(5)
 
 
 if __name__ == '__main__':
