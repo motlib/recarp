@@ -7,7 +7,9 @@ OUTPUT=${INPUT}.in
 
 echo "Converting '${INPUT}' to '${OUTPUT}'."
 
+cat ${INPUT} | head -n 1 | grep pulse || echo "WARNING: Sequence does not start with a pulse."
+
 cat ${INPUT} \
-    | sed -r -e 's/^pulse (.*)$/LIRC_PULSE\(\1\),/' \
-    | sed -r -e 's/^space (.*)$/LIRC_SPACE\(\1\),/' \
-    | tail -n +2 > ${OUTPUT}
+    | sed -r -e 's/^pulse (.*)$/\1\,/' \
+    | sed -r -e 's/^space (.*)$/\1\,/' > ${OUTPUT}
+
