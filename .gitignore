@@ -1,3 +1,5 @@
 # Intermediate and temporary python files to ignore
 *.pyc
 __pycache__
+
+src/mqtt-pub-sensors/config.py
