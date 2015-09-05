@@ -1,14 +1,20 @@
+'''Control a infrared remote control transmitter supported by lirc.
+
+Author: Andreas Schroeder <andreas@a-netz.de>
+'''
 
 import array
-from fcntl import ioctl
+from fcntl import ioctl, fcntl
 import os
-
+import logging
+import struct
 from gencmds import get_cmd_data
 
 
 dev_file='/dev/lirc0'
 
-LIRC_SET_SEND_CARRIER = 13
+# ioctl code taken from lirc.h
+LIRC_SET_SEND_CARRIER = 0x40046913
 
 
 def set_carrier(fd, freq):
@@ -18,7 +24,13 @@ def set_carrier(fd, freq):
     :param freq: Carrier frequency to set.
     '''
     
-    result = ioctl(fd, LIRC_SET_SEND_CARRIER, int(freq))
+    
+    freqdata = struct.pack('I', freq)
+
+    #freq = int(freq)
+    resdata = ioctl(fd, 0x40046913, freqdata)
+
+    result = struct.unpack('I', resdata)[0]
 
     if(result < 0):
         msg = "Failed to set carrier frequency to {0}Hz."
@@ -29,30 +41,44 @@ def set_carrier(fd, freq):
         logging.info(msg.format(freq))
 
 
-def send_buffer(fd, data):
-    
+def write_buffer(fd, buffer):
+    '''Write a data buffer to the device.
+
+    :param fd: The file descriptor to write to.
+    :param buffer: The buffer containing the data to send. The
+      structure of the data depends on the device file you are writing
+      to.'''
+
     retval = os.write(fd, buffer)
     
     if retval == len(buffer):
         msg = "Wrote {0} bytes of data to device."
-        logging.info(msg.format(retval))
+        logging.debug(msg.format(retval))
     else:
         msg = "Failed to write data completely to device (return value {0})."
         logging.error(msg.format(retval))
 
 
 def main():
+    logging.basicConfig(
+        format='%(asctime)s - %(levelname)s - %(message)s', 
+        level=logging.DEBUG)
 
-    fd = os.open(dev_file, os.O_RDWR)
-    print('FD is {0}'.format(fd))
+    try:
+        # open the device file
+        fd = os.open(dev_file, os.O_RDWR)
 
-    set_carrier(fd, 38000)
+        # set carrier frequency. Usually 36 or 38kHz
+        set_carrier(fd, 38000)
 
-    data = get_cmd_data()
-    send_buffer(data)
+        # get / create command data and send it out
+        data = get_cmd_data()
+        send_buffer(fd, data)
     
-    os.close(fd)
-
+    finally:
+        # close the device file
+        os.close(fd)
+        
 
 if __name__ == '__main__':
     main()
