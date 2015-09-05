@@ -27,6 +27,10 @@ static void set_carrier(int fd)
 	printf("ioctl LIRC_SET_SEND_CARRIER failed: %d\n", retval);
 	exit(-1);
     }
+    else
+      {
+	printf("ioctl LIRC_SET_SEND_CARRIER succeeded.\n");
+      }
 }
 
 
@@ -36,13 +40,30 @@ static void set_carrier(int fd)
 static void send_signal(int fd, cmd_info_t * cmdinfo)
 {
     int retval;
-    
+    int count;
+
+    printf("Writing %d bytes of data to device.\n", cmdinfo->size);
+
+    count = cmdinfo->size / sizeof(int);
+    if (cmdinfo->size % sizeof(int) || count % 2 == 0)
+      {
+	printf("ERROR: Wrong data size.\n");
+	return;
+      }
+
+
     retval = write(fd, cmdinfo->data, cmdinfo->size);
 
     if(retval < 0)
     {
-	perror("Writing data to device file failed.\n");
+      perror("Error:");
+        printf("Writing data to device file failed: %d\n", retval);
     }
+    else
+    {
+      printf("Result of write call: %d\n", retval);
+    }
+
 }
 
 
@@ -56,7 +77,7 @@ int main(int argc, char **argv)
     cmd_info_t cmd_info;
     int retval;
 
-    fd = open(DEVICE_FILE_NAME, 0);
+    fd = open(DEVICE_FILE_NAME, O_RDWR);
 
     if(fd < 0)
     {
