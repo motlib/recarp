@@ -64,6 +64,9 @@ def main():
         format='%(asctime)s - %(levelname)s - %(message)s', 
         level=logging.DEBUG)
 
+
+    
+
     try:
         # open the device file
         fd = os.open(dev_file, os.O_RDWR)
@@ -71,9 +74,18 @@ def main():
         # set carrier frequency. Usually 36 or 38kHz
         set_carrier(fd, 38000)
 
+        setup = def_setup = {
+            'on_off': 'off',
+            'dir': 'auto',
+            'vent': 'high',
+            'temp': 24,
+            'mode': 'cool',
+            }
+
+
         # get / create command data and send it out
-        data = get_cmd_data()
-        send_buffer(fd, data)
+        data = get_cmd_data(setup)
+        write_buffer(fd, data)
     
     finally:
         # close the device file

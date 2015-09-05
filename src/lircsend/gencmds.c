@@ -1,7 +1,6 @@
 #include "gencmds.h"
 
 #include <stdio.h>
-
 #include "lirc.h"
 
 /* 
