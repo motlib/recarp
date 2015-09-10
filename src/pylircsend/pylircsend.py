@@ -3,14 +3,8 @@
 Author: Andreas Schroeder <andreas@a-netz.de>
 '''
 
-from gencmds import get_cmd_data
-from pylis import PyLiS
-
-
-class Panasonic_A75C2665(PyLiS):
-    
-
-
+from gencmds import Panasonic_A75C2665
+import logging
 
 
 def main():
@@ -19,10 +13,10 @@ def main():
         level=logging.DEBUG)
 
 
-    with PyLiS() as p:
-        p.set_send_carrier(38000)
+    with Panasonic_A75C2665() as rc:
+        rc.set_send_carrier(38000)
         
-        setup = def_setup = {
+        setup = {
             'on_off': 'off',
             'dir': 'auto',
             'vent': 'high',
@@ -30,6 +24,8 @@ def main():
             'mode': 'cool',
             }
 
+
+        rc.
 
         # get / create command data and send it out
         data = get_cmd_data(setup)

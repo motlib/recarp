@@ -9,7 +9,7 @@ class Panasonic_A75C2665(PyLiS):
     def __init__(self, device='/dev/lirc0'):
         super(device)
 
-        self.positions = {
+        self.bit_positions = {
             't': 3,
             'on_off': 41,
             'mode': 45,
@@ -34,7 +34,7 @@ class Panasonic_A75C2665(PyLiS):
 
         def str_repl(s, pos_name, repl):
 
-            pos = self.positions[pos_name]
+            pos = self.bit_positions[pos_name]
             i = 0
 
             for e in repl:
@@ -75,6 +75,7 @@ class Panasonic_A75C2665(PyLiS):
 
             self.str_repl(s, 'mode', modes[mode])
 
+
         def set_dir(s, dir):
             dirs = {
                 'auto': [1, 1, 1, 1],
@@ -87,6 +88,7 @@ class Panasonic_A75C2665(PyLiS):
 
             self.str_repl(s, 'dir', dirs[dir])
 
+
         def set_vent(s, vent):
             vents = {
                 'auto': [0, 1, 0, 1],
@@ -96,6 +98,7 @@ class Panasonic_A75C2665(PyLiS):
                 }
 
             self.str_repl(s, 'vent', vents[vent])
+
 
         def add_checksum(s):
     
@@ -131,29 +134,24 @@ class Panasonic_A75C2665(PyLiS):
             'mode': 'cool',
             }
 
-        def gen_bitstring(setup=def_setup):
-            s = '01000000000001000000011100100000000000000000110000001100000000011111010100000000000000000110000000000110000000000000000000000001000000000110000000000000'
- 
+
+        def update_bitstring(self, setup=def_setup):
             logging.debug(setup)
 
-            logging.debug('TE is ' + s)
-   
             self.set_mode(setup['mode'])
             self.set_dir(setup['dir'])
             self.set_vent(setup['vent'])
             self.set_temp(setup['temp'])
             self.set_on_off(setup['on_off'])
-            
-            logging.debug('BS is ' + s)
     
             self.add_checksum()
 
-            logging.debug('CS is ' + s)
+            logging.debug('Bit string is ' + self.data)
 
 
-        def gen_value_list(self):
-    
-
+        def gen_ir_data(self, setup=def_setup):
+            self.update_bitstring(setup)
+            
             if len(self.bit_data) != 152:
                 raise ValueError('Invalid telegram length.')
 
@@ -171,21 +169,18 @@ class Panasonic_A75C2665(PyLiS):
             irdata.append(420)
 
             return irdata
-
-
-    def get_cmd_data(setup=def_setup):
-
-        bstr = gen_bitstring(setup)
-     
-        data = gen_from_bitstring(bstr)
-
-        a = array.array('I', data)
-        
-        return a.tobytes()
-        
-
-
-
+    
+    
+        def get_cmd_data(setup=def_setup):
+    
+            bstr = update_bitstring(setup)
+         
+            data = gen_from_bitstring(bstr)
+    
+            a = array.array('I', data)
+            
+            return a.tobytes()
+            
 
 if __name__=='__main__':
     logging.basicConfig(
