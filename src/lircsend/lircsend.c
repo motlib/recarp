@@ -21,16 +21,16 @@ static void set_carrier(int fd)
     int retval;
 
     retval = ioctl(fd, LIRC_SET_SEND_CARRIER, &freq);
-
+    
     if(retval < 0)
     {
-	printf("ioctl LIRC_SET_SEND_CARRIER failed: %d\n", retval);
-	exit(-1);
+        printf("ioctl LIRC_SET_SEND_CARRIER failed: %d\n", retval);
+        exit(-1);
     }
     else
-      {
-	printf("ioctl LIRC_SET_SEND_CARRIER succeeded.\n");
-      }
+    {
+    printf("ioctl LIRC_SET_SEND_CARRIER succeeded.\n");
+    }
 }
 
 
@@ -47,8 +47,8 @@ static void send_signal(int fd, cmd_info_t * cmdinfo)
     count = cmdinfo->size / sizeof(int);
     if (cmdinfo->size % sizeof(int) || count % 2 == 0)
       {
-	printf("ERROR: Wrong data size.\n");
-	return;
+    printf("ERROR: Wrong data size.\n");
+    return;
       }
 
 
@@ -79,10 +79,10 @@ int main(int argc, char **argv)
 
     fd = open(DEVICE_FILE_NAME, O_RDWR);
 
-    if(fd < 0)
+    if (fd < 0)
     {
-	printf("Can't open device file: %s\n", DEVICE_FILE_NAME);
-	exit(-1);
+        printf("Can't open device file: %s\n", DEVICE_FILE_NAME);
+        exit(-1);
     }
 
     set_carrier(fd);
@@ -91,15 +91,15 @@ int main(int argc, char **argv)
      * data needs to be generated. */
 
     retval = gen_cmd(&cmd_info, 0);
-    if(retval != 0)
+    if (retval != 0)
     {
-	perror("Failed to generate lirc signal data.\n");
-	exit(-1);
+        perror("Failed to generate lirc signal data.\n");
+        exit(-1);
     }
-    
+
     send_signal(fd, &cmd_info);
 
     close(fd);
-    
+
     return 0;
 }

@@ -17,15 +17,6 @@ static lirc_t cmd_28[] = {
 #include "cmds/panasonic_a75c2665/2-28.in"
 };
 
-static lirc_t cmd[] = {
-  200,
-  500,
-  200,
-  500,
-  200
-};
-
-
 int gen_cmd(cmd_info_t * cmd_info, int id)
 {
     if(id == 0)
