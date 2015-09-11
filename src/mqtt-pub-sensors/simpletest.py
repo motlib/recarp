@@ -1,42 +1,46 @@
-'''Test code to read sensors and write results to a CSV file.'''
+'''
+Created on Mar 22, 2015
 
+@author: andreas
+'''
 
+from sensors.BMP180 import BMP180
+from sensors.HTU21D import HTU21D
+from sensors.TSL2561 import TSL2561
+from sensors.RPiInternalTemp import RPiInternalTemp
 import time
 import logging
-
-from sensors.RPiInternalTemp import RPiInternalTemp
-
+import smbus 
 
 def main():
-    '''Application entry point.'''
     
     logging.basicConfig(level=logging.DEBUG)
 
-    # Create sensors array
-    #TODO: should become some factory function.
-    sensors = [
+    bus = smbus.SMBus(1)
+
+    sensors = [ 
+        BMP180('pr', bus), 
+        HTU21D('rhum', 1), # other interface, needs bus number, not smbus object
+        TSL2561('lum', bus),
         RPiInternalTemp('rpi1')
     ]
-
+    
     while True:
         values = []
-
-        msg = 'Start sampling sensors.'
-        logging.debug(msg)
+        
         for s in sensors:
-            msg = "Sampling sensor '{0}'."
-            logging.info(msg.format(str(s)))
-            values.extend(s.sampleValues())
+            values.extend(s.sampleValue())
             
         for v in values:
-            msg = 'Sensor value: {0}'
-            logging.info(msg.format(str(v)))
+            print(str(v))
             
-        msg = 'Sensor sampling completed. Sleeping until next cycle.'
-        logging.debug(msg)
-        
+        with open('log.csv', 'a') as f:
+            data = '\t'.join([str(v.getValue()) for v in values])
+            f.write('{0}\n'.format(data))
+             
         time.sleep(2)
+    
+    
 
-        
 if __name__ == '__main__':
     main()
