@@ -9,16 +9,16 @@ class Panasonic_A75C2665(PyLiS):
         super().__init__(device)
 
         self.bit_positions = {
-            't': 3,
-            'on_off': 41,
-            'mode': 45,
-            'temp': 50,
-            'dir': 65,
-            'vent': 69,
-            'checksum': 145,
+            #'t': 3,
+            'on_off': 40,
+            'mode': 44,
+            'temp': 49,
+            'air_dir': 64,
+            'fan_speed': 68,
+            'checksum': 144,
             }
 
-        # 144 bits (16 bytes) plus 1 byte checksum
+        # 18 bytes plus 1 byte checksum
         self.data = [
             0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 
             0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 
@@ -32,13 +32,13 @@ class Panasonic_A75C2665(PyLiS):
             0, 0, 0, 0, 0, 0, 0, 0, ]
         
 
-    def str_repl(self, pos_name, repl):
+    def merge_data(self, pos_name, repl):
 
         pos = self.bit_positions[pos_name]
         i = 0
 
         for e in repl:
-            self.bit_data[pos] = e
+            self.data[pos] = e
             i += 1
             pos += 1
 
@@ -48,16 +48,17 @@ class Panasonic_A75C2665(PyLiS):
             'on': [1, ],
             'off': [0, ],
             }
-        self.str_repl('on_off', statuus[status])
+        self.merge_data('on_off', statuus[status])
 
 
     def set_temp(self, temp):
+        '''Set the air temperature. '''
         # TODO: Works from 16 degree up to 31 degree
         # get last 5 lsbs of temperature and reverse it
 
         temp_list = self.int_to_bitlist(temp, 5)
 
-        self.str_repl('temp', temp_list)
+        self.merge_data('temp', temp_list)
 
 
     def set_mode(self, mode):
@@ -73,10 +74,10 @@ class Panasonic_A75C2665(PyLiS):
             '4': [0, 1, 0],
             }
 
-        self.str_repl('mode', modes[mode])
+        self.merge_data('mode', modes[mode])
 
 
-    def set_dir(self, dir):
+    def set_air_dir(self, air_dir):
         '''Set air output direcion. '''
         dirs = {
             'auto': [1, 1, 1, 1],
@@ -87,20 +88,20 @@ class Panasonic_A75C2665(PyLiS):
             '1': [1, 0, 1, 0],
             }
 
-        self.str_repl('dir', dirs[dir])
+        self.merge_data('air_dir', dirs[air_dir])
 
 
-    def set_fan_speed(self, vent):
+    def set_fan_speed(self, fan_speed):
         '''Set the fan speed. '''
         
-        vents = {
+        fan_speeds = {
             'auto': [0, 1, 0, 1],
             'high': [1, 1, 1, 0],
             'med': [1, 0, 1, 0],
             'low': [1, 1, 0, 0],
             }
 
-        self.str_repl('vent', vents[vent])
+        self.merge_data('fan_speed', fan_speeds[fan_speed])
 
 
     def bitlist_to_int(self, bitlist):
@@ -140,11 +141,11 @@ class Panasonic_A75C2665(PyLiS):
             bitpos = bytepos * 8 
             
             val += self.bitlist_to_int(
-                self.data[bitpos, bitpos + 8])
+                self.data[bitpos:bitpos + 8])
          
         cs_list = self.int_to_bitlist(val, 8)
         
-        self.str_repl('checksum', cs_list)
+        self.merge_data('checksum', cs_list)
 
  
     def_setup = {
@@ -160,14 +161,12 @@ class Panasonic_A75C2665(PyLiS):
         logging.debug(setup)
 
         self.set_mode(setup['mode'])
-        self.set_dir(setup['dir'])
-        self.set_vent(setup['vent'])
+        self.set_air_dir(setup['air_dir'])
+        self.set_fan_speed(setup['fan_speed'])
         self.set_temp(setup['temp'])
         self.set_on_off(setup['on_off'])
 
         self.add_checksum()
-
-        logging.debug('Bit string is ' + self.data)
 
 
     def generate_irdata(self, setup=def_setup):
@@ -192,7 +191,6 @@ class Panasonic_A75C2665(PyLiS):
         irdata.append(420)
 
         return irdata
-    
     
         
 if __name__=='__main__':
