@@ -80,12 +80,12 @@ class PyLiS(object):
             logging.info(msg.format(freq))
 
 
-    def send_buffer(self, fd, rc_data):
-        '''Write a data rc_data to the dev_file.
+    def send_irdata(self, ir_data):
+        '''Write a data ir_data to the dev_file.
 
         :param fd: The file descriptor to write to.  
 
-        :param rc_data: The rc_data containing the data to send. The
+        :param ir_data: The ir_data containing the data to send. The
           data consists of a list of integer values as expected by the
           lirc dev_file.
         '''
@@ -94,13 +94,24 @@ class PyLiS(object):
             raise Exception('Call to open() is missing.')
 
         # convert data list to byte stream
-        dar = array.array('I', rc_data)
+        dar = array.array('I', ir_data)
         
         retval = os.write(self.fd, dar.tobytes())
     
-        if retval == len(rc_data):
+        if retval == len(ir_data):
             msg = "Wrote {0} bytes of data to dev_file."
             logging.debug(msg.format(retval))
         else:
             msg = "Failed to write data completely to dev_file (return value {0})."
             logging.error(msg.format(retval))
+
+
+    def generate_irdata(self):
+        return None
+
+
+    def send_ir_command(self, setup):
+        ir_data = self.generate_irdata(self, setup)
+        self.send_irdata(ir_data)
+        
+        

@@ -1,4 +1,3 @@
-import array
 import logging
 
 from pylis import PyLiS
@@ -7,7 +6,7 @@ from pylis import PyLiS
 class Panasonic_A75C2665(PyLiS):
     
     def __init__(self, device='/dev/lirc0'):
-        super(device)
+        super().__init__(device)
 
         self.bit_positions = {
             't': 3,
@@ -19,6 +18,7 @@ class Panasonic_A75C2665(PyLiS):
             'checksum': 145,
             }
 
+        # 144 bits (16 bytes) plus 1 byte checksum
         self.data = [
             0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 
             0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 
@@ -32,159 +32,171 @@ class Panasonic_A75C2665(PyLiS):
             0, 0, 0, 0, 0, 0, 0, 0, ]
         
 
-        def str_repl(s, pos_name, repl):
+    def str_repl(self, pos_name, repl):
 
-            pos = self.bit_positions[pos_name]
-            i = 0
+        pos = self.bit_positions[pos_name]
+        i = 0
 
-            for e in repl:
-                self.bit_data[pos] = repl[i]
-                i += 1
-                pos += 1
-
-
-
-        def set_on_off(s, status):
-            statuus = {
-                'on': [1, ],
-                'off': [0, ],
-                }
-            str_repl(s, 'on_off', statuus[status])
+        for e in repl:
+            self.bit_data[pos] = e
+            i += 1
+            pos += 1
 
 
-        def set_temp(s, temp):
-            # TODO: Works from 16 degree up to 31 degree
-            # get last 5 lsbs of temperature and reverse it
-
-            # generate string of bits
-            stemp = bin(temp)[-5:][::-1]
-
-            # generate list from string
-            ltemp = [int(b) for b in stemp]
-
-            self.str_repl(s, 'temp', ltemp)
+    def set_on_off(self, status):
+        statuus = {
+            'on': [1, ],
+            'off': [0, ],
+            }
+        self.str_repl('on_off', statuus[status])
 
 
-        def set_mode(s, mode):
-            modes = {
-                '1': [0, 0, 0],
-                '2': [0, 0, 1],
-                'cool': [1, 1, 0],
-                '4': [0, 1, 0],
-                }
+    def set_temp(self, temp):
+        # TODO: Works from 16 degree up to 31 degree
+        # get last 5 lsbs of temperature and reverse it
 
-            self.str_repl(s, 'mode', modes[mode])
+        temp_list = self.int_to_bitlist(temp, 5)
+
+        self.str_repl('temp', temp_list)
 
 
-        def set_dir(s, dir):
-            dirs = {
-                'auto': [1, 1, 1, 1],
-                '5': [1, 0, 0, 0],
-                '4': [0, 0, 1, 0],
-                '3': [1, 1, 0, 0],
-                '2': [0, 1, 0, 0],
-                '1': [1, 0, 1, 0],
-                }
-
-            self.str_repl(s, 'dir', dirs[dir])
-
-
-        def set_vent(s, vent):
-            vents = {
-                'auto': [0, 1, 0, 1],
-                'high': [1, 1, 1, 0],
-                'med': [1, 0, 1, 0],
-                'low': [1, 1, 0, 0],
-                }
-
-            self.str_repl(s, 'vent', vents[vent])
-
-
-        def add_checksum(s):
-    
-            s1 = s[:144]
-
-            l = [s1[i:i+8] for i in range(0, len(s1), 8)]
-
-            v = 0
-            for e in l:
-                # reverse each base-2-number, convert to int and add to sum
-                v += int(e[::-1], 2)
-                
-                logging.debug('CN is ' + bin(v)[-8:])
-
-            # add this to make sure sum is more than 8 bits wide :-)
-            v += 0b100000000
-
-            # take 8 lsb from sum, reverse string
-            checksum = bin(v)[-8:][::-1]
-
-            logging.info('CS is ' + checksum)
-
-            s = str_repl(s, 'checksum', checksum)
-
-            return s
-
-
-        def_setup = {
-            'on_off': 'on',
-            'dir': 'auto',
-            'vent': 'auto',
-            'temp': 24,
-            'mode': 'cool',
+    def set_mode(self, mode):
+        '''Set the operation mode (cool, heat, dry).
+        
+        :param string mode: The operation mode.
+        '''
+         
+        modes = {
+            '1': [0, 0, 0],
+            '2': [0, 0, 1],
+            'cool': [1, 1, 0],
+            '4': [0, 1, 0],
             }
 
-
-        def update_bitstring(self, setup=def_setup):
-            logging.debug(setup)
-
-            self.set_mode(setup['mode'])
-            self.set_dir(setup['dir'])
-            self.set_vent(setup['vent'])
-            self.set_temp(setup['temp'])
-            self.set_on_off(setup['on_off'])
-    
-            self.add_checksum()
-
-            logging.debug('Bit string is ' + self.data)
+        self.str_repl('mode', modes[mode])
 
 
-        def gen_ir_data(self, setup=def_setup):
-            self.update_bitstring(setup)
+    def set_dir(self, dir):
+        '''Set air output direcion. '''
+        dirs = {
+            'auto': [1, 1, 1, 1],
+            '5': [1, 0, 0, 0],
+            '4': [0, 0, 1, 0],
+            '3': [1, 1, 0, 0],
+            '2': [0, 1, 0, 0],
+            '1': [1, 0, 1, 0],
+            }
+
+        self.str_repl('dir', dirs[dir])
+
+
+    def set_fan_speed(self, vent):
+        '''Set the fan speed. '''
+        
+        vents = {
+            'auto': [0, 1, 0, 1],
+            'high': [1, 1, 1, 0],
+            'med': [1, 0, 1, 0],
+            'low': [1, 1, 0, 0],
+            }
+
+        self.str_repl('vent', vents[vent])
+
+
+    def bitlist_to_int(self, bitlist):
+        '''Convert a bitlist to integer. 
+        
+        Bitlist is expected in LSB format.'''
+        
+        out = 0
+        
+        for bit in reversed(bitlist):
+            out = (out << 1) | bit
             
-            if len(self.bit_data) != 152:
-                raise ValueError('Invalid telegram length.')
+        return out
 
-            irdata = [3500, 1700]
+            
+    def int_to_bitlist(self, val, list_len):
+        '''Convert an integer to a bitlist of specified length.
+        
+        bitlist is generated in LSB format.'''
+        
+        bitlist = [0] * list_len
+        
+        bm = 1
+        for bit in range(list_len):
+            if val & bm != 0:
+                bitlist[bit] = 1
+            bm <<= 1
 
-            for c in self.bit_data:
-                irdata.append(460)
-                if c == '0':
-                    irdata.append(420)
-                elif c == '1':
-                    irdata.append(1260)
-                else:
-                    raise ValueError('Unsupported value in bitstring.')
+        return bitlist 
 
-            irdata.append(420)
 
-            return irdata
-    
-    
-        def get_cmd_data(setup=def_setup):
-    
-            bstr = update_bitstring(setup)
+    def add_checksum(self):
+        # bytes in list are stored lsb first!
+
+        val = 0
+        for bytepos in range(0, 16):
+            bitpos = bytepos * 8 
+            
+            val += self.bitlist_to_int(
+                self.data[bitpos, bitpos + 8])
          
-            data = gen_from_bitstring(bstr)
-    
-            a = array.array('I', data)
-            
-            return a.tobytes()
-            
+        cs_list = self.int_to_bitlist(val, 8)
+        
+        self.str_repl('checksum', cs_list)
 
+ 
+    def_setup = {
+        'on_off': 'on',
+        'dir': 'auto',
+        'vent': 'auto',
+        'temp': 24,
+        'mode': 'cool',
+        }
+
+
+    def update_bitstring(self, setup=def_setup):
+        logging.debug(setup)
+
+        self.set_mode(setup['mode'])
+        self.set_dir(setup['dir'])
+        self.set_vent(setup['vent'])
+        self.set_temp(setup['temp'])
+        self.set_on_off(setup['on_off'])
+
+        self.add_checksum()
+
+        logging.debug('Bit string is ' + self.data)
+
+
+    def generate_irdata(self, setup=def_setup):
+        self.update_bitstring(setup)
+        
+        # start the ir data with the preamble
+        irdata = [3500, 1700]
+
+        for c in self.bit_data:
+            # add the pulse
+            irdata.append(460)
+            
+            # add the pause
+            if c == '0':
+                irdata.append(420)
+            elif c == '1':
+                irdata.append(1260)
+            else:
+                raise ValueError('Unsupported value in bitstring.')
+
+        # add the suffix (last pulse)
+        irdata.append(420)
+
+        return irdata
+    
+    
+        
 if __name__=='__main__':
     logging.basicConfig(
         format='%(asctime)s - %(levelname)s - %(message)s', 
         level=logging.DEBUG)
 
-    print(gen_bitstring())
