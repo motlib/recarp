@@ -4,7 +4,7 @@ Created on Sep 11, 2015
 @author: andreas
 '''
 import unittest
-from gencmds import Panasonic_A75C2665
+from remote_controls import Panasonic_A75C2665
 
 class Test(unittest.TestCase):
 
@@ -41,9 +41,6 @@ class Test(unittest.TestCase):
         
         self.assertEqual(rc.int_to_bitlist(16, 2), [0, 0])
 
-
-        
-        
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

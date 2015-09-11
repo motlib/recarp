@@ -81,11 +81,11 @@ class Panasonic_A75C2665(PyLiS):
         '''Set air output direcion. '''
         dirs = {
             'auto': [1, 1, 1, 1],
-            '5': [1, 0, 0, 0],
-            '4': [0, 0, 1, 0],
-            '3': [1, 1, 0, 0],
+            '1': [1, 0, 0, 0],
             '2': [0, 1, 0, 0],
-            '1': [1, 0, 1, 0],
+            '3': [1, 1, 0, 0],
+            '4': [0, 0, 1, 0],
+            '5': [1, 0, 1, 0],
             }
 
         self.merge_data('air_dir', dirs[air_dir])
@@ -97,7 +97,7 @@ class Panasonic_A75C2665(PyLiS):
         fan_speeds = {
             'auto': [0, 1, 0, 1],
             'high': [1, 1, 1, 0],
-            'med': [1, 0, 1, 0],
+            'medium': [1, 0, 1, 0],
             'low': [1, 1, 0, 0],
             }
 
@@ -136,13 +136,17 @@ class Panasonic_A75C2665(PyLiS):
     def add_checksum(self):
         # bytes in list are stored lsb first!
 
+        cs_range = range(
+            0, 
+            (int(len(self.data) / 8)) - 1)
+
         val = 0
-        for bytepos in range(0, 16):
+        for bytepos in cs_range:
             bitpos = bytepos * 8 
             
             val += self.bitlist_to_int(
                 self.data[bitpos:bitpos + 8])
-         
+        
         cs_list = self.int_to_bitlist(val, 8)
         
         self.merge_data('checksum', cs_list)
