@@ -94,25 +94,28 @@ class PyLiS(object):
         '''Write a data ir_data to the dev_file.
 
         :param fd: The file descriptor to write to.  
-
         :param ir_data: The ir_data containing the data to send. The
           data consists of a list of integer values as expected by the
           lirc dev_file.'''
 
-        if self.fd == None:
+        if not self.is_open():
             raise Exception('Call to open() is missing.')
 
         # convert data list to byte stream
-        dar = array.array('I', ir_data)
+        byte_data = array.array('I', ir_data).tobytes()
         
-        retval = os.write(self.fd, dar.tobytes())
+        retval = os.write(self.fd, byte_data)
     
-        if retval == len(ir_data):
-            msg = "Wrote {0} bytes of data to dev_file."
-            logging.debug(msg.format(retval))
+        if retval == len(byte_data):
+            msg = "Successfully wrote {len} bytes of data to '{dev}'."
+            logging.debug(msg.format(
+                len=retval, 
+                dev=self.dev_file))
         else:
-            msg = "Failed to write data completely to dev_file (return value {0})."
-            logging.error(msg.format(retval))
+            msg = "Failed to write data completely to '{dev}'. Return value {ret}."
+            raise Exception(msg.format(
+                ret=retval, 
+                dev=self.dev_file))
 
 
     def generate_irdata(self):
@@ -122,7 +125,7 @@ class PyLiS(object):
 
 
     def send_ir_command(self, **setup):
-        ir_data = self.generate_irdata(self, **setup)
+        ir_data = self.generate_irdata(**setup)
         self.send_irdata(ir_data)
         
         

@@ -221,17 +221,18 @@ class Panasonic_A75C2665(BitlistRemote):
         # start the ir data with the preamble
         irdata = [3500, 1700]
 
-        for c in self.bit_data:
+        for c in self.data:
             # add the pulse
             irdata.append(460)
             
             # add the pause
-            if c == '0':
+            if c == 0:
                 irdata.append(420)
-            elif c == '1':
+            elif c == 1:
                 irdata.append(1260)
             else:
-                raise ValueError('Invalid value in bitlist.')
+                msg = "Invalid value '{0}' in bitlist."
+                raise ValueError(msg.format(c))
 
         # add the suffix (last pulse)
         irdata.append(420)
