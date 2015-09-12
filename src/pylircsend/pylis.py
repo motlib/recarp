@@ -23,6 +23,11 @@ class PyLiS(object):
 
 
     def open(self):
+        '''Open the lirc device file.
+        
+        If it was already opened, it will be closed first and then opened 
+        again.'''
+        
         if self.fd != None:
             self.close()
 
@@ -36,22 +41,28 @@ class PyLiS(object):
 
         
     def close(self):
+        '''Close the lirc device file if it was opened.'''
         if self.fd != None:
             # close the dev_file file
             os.close(self.fd)
             self.fd = None
             
+            
     def is_open(self):
+        '''Return true if the lirc device is currently opened.'''
+        
         return (self.fd != None)
             
 
     def __enter__(self):
+        '''Context-manager function to start using the lirc device resource.'''
         self.open()
 
         return self
 
 
     def __exit__(self, exc_type, value, traceback):
+        '''Context-manager function to end using the lirc device resource.'''
         self.close()
 
 
@@ -59,8 +70,7 @@ class PyLiS(object):
         '''Set LIRC carrier frequency for sending.
         
         :param fd: File descriptor of lirc dev_file file.
-        :param freq: Carrier frequency to set.
-        '''
+        :param freq: Carrier frequency to set.'''
         
         if not self.is_open():
             raise Exception('Call to open() is missing.')
@@ -87,8 +97,7 @@ class PyLiS(object):
 
         :param ir_data: The ir_data containing the data to send. The
           data consists of a list of integer values as expected by the
-          lirc dev_file.
-        '''
+          lirc dev_file.'''
 
         if self.fd == None:
             raise Exception('Call to open() is missing.')
@@ -107,7 +116,9 @@ class PyLiS(object):
 
 
     def generate_irdata(self):
-        return None
+        '''Abstract method to generate irdata list.'''
+        
+        raise Exception('Needs to be overriden in subclass.')
 
 
     def send_ir_command(self, setup):

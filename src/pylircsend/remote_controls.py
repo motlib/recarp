@@ -2,24 +2,84 @@ import logging
 
 from pylis import PyLiS
 
+class BitlistRemote(PyLiS):
+    
+    def __init__(self, bitlength, device):
+        super().__init__(device)
+        
+        self.data = [0] * bitlength
+        
+        self.bit_positions = {}
+    
+    
+    def set_bit_positions(self, **positions):
+        self.bit_positions.update(positions)
+        
+        
+    def init_bitlist(self, data):
+        if len(data) != len(self.data):
+            raise ValueError('Bit data is not of same length.')
+        
+    
+    def merge(self, pos, repl):
+        i = 0
 
-class Panasonic_A75C2665(PyLiS):
+        for e in repl:
+            self.data[pos] = e
+            i += 1
+            pos += 1
+
+    
+    def merge_data(self, pos_name, repl):
+        pos = self.bit_positions[pos_name]
+        self.merge(pos, repl)    
+
+    
+    def bitlist_to_int(self, bitlist):
+        '''Convert a bitlist to integer. 
+        
+        Bitlist is expected in LSB format.'''
+        
+        out = 0
+        
+        for bit in reversed(bitlist):
+            out = (out << 1) | bit
+            
+        return out
+
+
+    def int_to_bitlist(self, val, list_len):
+        '''Convert an integer to a bitlist of specified length.
+        
+        bitlist is generated in LSB format.'''
+        
+        bitlist = [0] * list_len
+        
+        bm = 1
+        for bit in range(list_len):
+            if val & bm != 0:
+                bitlist[bit] = 1
+            bm <<= 1
+
+        return bitlist 
+
+
+class Panasonic_A75C2665(BitlistRemote):
     
     def __init__(self, device='/dev/lirc0'):
-        super().__init__(device)
+        super().__init__(bitlength=19*8, device=device)
 
-        self.bit_positions = {
-            #'t': 3,
-            'on_off': 40,
-            'mode': 44,
-            'temp': 49,
-            'air_dir': 64,
-            'fan_speed': 68,
-            'checksum': 144,
-            }
+        self.set_bit_positions(
+            on_off=40,
+            mode=44,
+            temp=49,
+            air_dir=64,
+            fan_speed=68,
+            checksum=144,
+        )
 
-        # 18 bytes plus 1 byte checksum
-        self.data = [
+        # 18 bytes plus 1 byte checksum as init data
+        self.merge(0, [
             0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 
             0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 
@@ -29,18 +89,15 @@ class Panasonic_A75C2665(PyLiS):
             0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
             0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 
-            0, 0, 0, 0, 0, 0, 0, 0, ]
+            0, 0, 0, 0, 0, 0, 0, 0, ])
         
-
-    def merge_data(self, pos_name, repl):
-
-        pos = self.bit_positions[pos_name]
-        i = 0
-
-        for e in repl:
-            self.data[pos] = e
-            i += 1
-            pos += 1
+        self.setup = {
+            'on_off': 'on',
+            'dir': 'auto',
+            'vent': 'auto',
+            'temp': 24,
+            'mode': 'cool',
+            }
 
 
     def set_on_off(self, status):
@@ -53,8 +110,6 @@ class Panasonic_A75C2665(PyLiS):
 
     def set_temp(self, temp):
         '''Set the air temperature. '''
-        # TODO: Works from 16 degree up to 31 degree
-        # get last 5 lsbs of temperature and reverse it
 
         temp_list = self.int_to_bitlist(temp, 5)
 
@@ -86,7 +141,7 @@ class Panasonic_A75C2665(PyLiS):
             '3': [1, 1, 0, 0],
             '4': [0, 0, 1, 0],
             '5': [1, 0, 1, 0],
-            }
+        }
 
         self.merge_data('air_dir', dirs[air_dir])
 
@@ -99,42 +154,15 @@ class Panasonic_A75C2665(PyLiS):
             'high': [1, 1, 1, 0],
             'medium': [1, 0, 1, 0],
             'low': [1, 1, 0, 0],
-            }
+        }
 
         self.merge_data('fan_speed', fan_speeds[fan_speed])
 
 
-    def bitlist_to_int(self, bitlist):
-        '''Convert a bitlist to integer. 
-        
-        Bitlist is expected in LSB format.'''
-        
-        out = 0
-        
-        for bit in reversed(bitlist):
-            out = (out << 1) | bit
-            
-        return out
-
-            
-    def int_to_bitlist(self, val, list_len):
-        '''Convert an integer to a bitlist of specified length.
-        
-        bitlist is generated in LSB format.'''
-        
-        bitlist = [0] * list_len
-        
-        bm = 1
-        for bit in range(list_len):
-            if val & bm != 0:
-                bitlist[bit] = 1
-            bm <<= 1
-
-        return bitlist 
-
-
     def add_checksum(self):
-        # bytes in list are stored lsb first!
+        '''Calculate the checksum byte.
+        
+        The bytes in the bitlist are stored in LSB order.'''
 
         cs_range = range(
             0, 
@@ -151,30 +179,30 @@ class Panasonic_A75C2665(PyLiS):
         
         self.merge_data('checksum', cs_list)
 
- 
-    def_setup = {
-        'on_off': 'on',
-        'dir': 'auto',
-        'vent': 'auto',
-        'temp': 24,
-        'mode': 'cool',
-        }
 
-
-    def update_bitstring(self, setup=def_setup):
+    def update_bitstring(self, **setup):
         logging.debug(setup)
 
-        self.set_mode(setup['mode'])
-        self.set_air_dir(setup['air_dir'])
-        self.set_fan_speed(setup['fan_speed'])
-        self.set_temp(setup['temp'])
-        self.set_on_off(setup['on_off'])
+        if 'mode' in setup.keys():
+            self.set_mode(setup['mode'])
+        
+        if 'air_dir' in setup.keys():
+            self.set_air_dir(setup['air_dir'])
+        
+        if 'air_dir' in setup.keys():
+            self.set_fan_speed(setup['fan_speed'])
+            
+        if 'air_dir' in setup.keys():
+            self.set_temp(setup['temp'])
+            
+        if 'air_dir' in setup.keys():
+            self.set_on_off(setup['on_off'])
 
         self.add_checksum()
 
 
-    def generate_irdata(self, setup=def_setup):
-        self.update_bitstring(setup)
+    def generate_irdata(self, **setup):
+        self.update_bitstring(**setup)
         
         # start the ir data with the preamble
         irdata = [3500, 1700]
@@ -189,16 +217,9 @@ class Panasonic_A75C2665(PyLiS):
             elif c == '1':
                 irdata.append(1260)
             else:
-                raise ValueError('Unsupported value in bitstring.')
+                raise ValueError('Invalid value in bitlist.')
 
         # add the suffix (last pulse)
         irdata.append(420)
 
         return irdata
-    
-        
-if __name__=='__main__':
-    logging.basicConfig(
-        format='%(asctime)s - %(levelname)s - %(message)s', 
-        level=logging.DEBUG)
-

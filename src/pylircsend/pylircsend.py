@@ -3,7 +3,7 @@
 Author: Andreas Schroeder <andreas@a-netz.de>
 '''
 
-from gencmds import Panasonic_A75C2665
+from remote_controls import Panasonic_A75C2665
 import logging
 
 
@@ -24,14 +24,7 @@ def main():
             'mode': 'cool',
             }
 
-
-        rc.
-
-        # get / create command data and send it out
-        data = get_cmd_data(setup)
-        write_buffer(fd, data)
-    
-        
+        rc.send_ir_command(**setup)
 
 if __name__ == '__main__':
     main()
