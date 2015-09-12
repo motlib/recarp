@@ -6,7 +6,7 @@ Created on Sep 11, 2015
 import unittest
 from remote_controls import BitlistRemote
 
-class Test(unittest.TestCase):
+class TestBitlistRemote(unittest.TestCase):
 
     def setUp(self):
         unittest.TestCase.setUp(self)

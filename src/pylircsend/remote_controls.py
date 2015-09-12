@@ -3,6 +3,7 @@ import logging
 from pylis import PyLiS
 
 class BitlistRemote(PyLiS):
+    '''Base class for remotes having their own state coded in bits.'''
     
     def __init__(self, bitlength, device):
         super().__init__(device)
@@ -65,8 +66,14 @@ class BitlistRemote(PyLiS):
 
 
 class Panasonic_A75C2665(BitlistRemote):
+    '''Implementation of the Panasonic A75C2665 air conditioning remote control.
+    '''
     
     def __init__(self, device='/dev/lirc0'):
+        '''Initialize the remote control object. 
+        
+        :param string device: The lirc device file to open.'''
+        
         super().__init__(bitlength=19*8, device=device)
 
         self.set_bit_positions(
@@ -100,16 +107,23 @@ class Panasonic_A75C2665(BitlistRemote):
             }
 
 
-    def set_on_off(self, status):
+    def set_power_status(self, status):
+        '''Set the power status.
+        
+        :param string status: Either 'on' or 'off'.'''
+        
         statuus = {
             'on': [1, ],
             'off': [0, ],
             }
+        
         self.merge_data('on_off', statuus[status])
 
 
-    def set_temp(self, temp):
-        '''Set the air temperature. '''
+    def set_temperature(self, temp):
+        '''Set the air temperature. 
+        
+        :param temp: The temperature in degree celsius.'''
 
         temp_list = self.int_to_bitlist(temp, 5)
 
@@ -117,17 +131,17 @@ class Panasonic_A75C2665(BitlistRemote):
 
 
     def set_mode(self, mode):
-        '''Set the operation mode (cool, heat, dry).
+        '''Set the operation mode.
         
-        :param string mode: The operation mode.
-        '''
+        :param string mode: The operation mode. One of 'heat', 'cool', 'dry' 
+          and 'auto'.'''
          
         modes = {
-            '1': [0, 0, 0],
-            '2': [0, 0, 1],
+            'auto': [0, 0, 0],
+            'heat': [0, 0, 1],
             'cool': [1, 1, 0],
-            '4': [0, 1, 0],
-            }
+            'dry': [0, 1, 0],
+        }
 
         self.merge_data('mode', modes[mode])
 
@@ -193,10 +207,10 @@ class Panasonic_A75C2665(BitlistRemote):
             self.set_fan_speed(setup['fan_speed'])
             
         if 'air_dir' in setup.keys():
-            self.set_temp(setup['temp'])
+            self.set_temperature(setup['temp'])
             
         if 'air_dir' in setup.keys():
-            self.set_on_off(setup['on_off'])
+            self.set_power_status(setup['on_off'])
 
         self.add_checksum()
 

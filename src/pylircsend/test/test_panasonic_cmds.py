@@ -3,13 +3,14 @@ Created on Sep 11, 2015
 
 @author: andreas
 '''
+
 import unittest
 import logging
 
 from remote_controls import Panasonic_A75C2665
 
 
-class Test(unittest.TestCase):
+class TestPanasonicA75C2665(unittest.TestCase):
 
     setups = [
         { # 0
@@ -89,52 +90,65 @@ class Test(unittest.TestCase):
     def test_cmd_1(self):
         self.run_cmd(1)
 
+
     def test_cmd_2(self):
         self.run_cmd(2)
+
 
     def test_cmd_3(self):
         self.run_cmd(3)
 
+
     def test_cmd_4(self):
         self.run_cmd(4)
+
 
     def test_cmd_5(self):
         self.run_cmd(5)
 
+
     def test_cmd_6(self):
         self.run_cmd(6)
+
 
     def test_cmd_7(self):
         self.run_cmd(7)
 
+
     def test_cmd_8(self):
         self.run_cmd(8)
+
 
     def test_cmd_9(self):
         self.run_cmd(9)
 
+
     def test_cmd_10(self):
         self.run_cmd(10)
+
 
     #def test_cmd_11(self):
     #    self.run_cmd(11)
 
+
     def test_cmd_12(self):
         self.run_cmd(12)
+
 
     def test_cmd_13(self):
         self.run_cmd(13)
 
+
     #def test_cmd_14(self):
     #    self.run_cmd(14)
 
+
     def test_cmd_15(self):
         self.run_cmd(15)
-
-
+        
 
     def run_cmd(self, test_id):
-        setup = Test.setups[test_id]
+        setup = TestPanasonicA75C2665.setups[test_id]
         
         s = setup['expect'].replace(' ', '')
         s1_list = [int(c) for c in s]
@@ -148,7 +162,7 @@ class Test(unittest.TestCase):
     
         self.assertEqual(self.rc.data, s1_list)
     
-            
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

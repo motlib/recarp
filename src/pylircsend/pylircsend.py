@@ -17,11 +17,11 @@ def main():
         rc.set_send_carrier(38000)
         
         setup = {
-            'on_off': 'off',
+            'on_off': 'on',
             'dir': 'auto',
-            'vent': 'high',
+            'vent': 'low',
             'temp': 24,
-            'mode': 'cool',
+            'mode': 'auto',
             }
 
         rc.send_ir_command(**setup)
