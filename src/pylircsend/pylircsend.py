@@ -17,9 +17,9 @@ def main():
         rc.set_send_carrier(38000)
         
         setup = {
-            'on_off': 'on',
-            'dir': 'auto',
-            'vent': 'low',
+            'power': 'on',
+            'air_dir': 'auto',
+            'fan': 'low',
             'temp': 24,
             'mode': 'auto',
             }

@@ -203,14 +203,14 @@ class Panasonic_A75C2665(BitlistRemote):
         if 'air_dir' in setup.keys():
             self.set_air_dir(setup['air_dir'])
         
-        if 'air_dir' in setup.keys():
-            self.set_fan_speed(setup['fan_speed'])
+        if 'fan' in setup.keys():
+            self.set_fan_speed(setup['fan'])
             
-        if 'air_dir' in setup.keys():
+        if 'temp' in setup.keys():
             self.set_temperature(setup['temp'])
             
-        if 'air_dir' in setup.keys():
-            self.set_power_status(setup['on_off'])
+        if 'power' in setup.keys():
+            self.set_power_status(setup['power'])
 
         self.add_checksum()
 
