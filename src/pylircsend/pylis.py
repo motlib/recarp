@@ -121,8 +121,8 @@ class PyLiS(object):
         raise Exception('Needs to be overriden in subclass.')
 
 
-    def send_ir_command(self, setup):
-        ir_data = self.generate_irdata(self, setup)
+    def send_ir_command(self, **setup):
+        ir_data = self.generate_irdata(self, **setup)
         self.send_irdata(ir_data)
         
         
